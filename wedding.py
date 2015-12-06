@@ -112,12 +112,18 @@ class State:
 # Local Search #
 ################
 
-# inspiré du code de Ben.D
-# Attention: Il faut utiliser seed equal to 42 in your random generator.
+# randomize maxvalue chooses the next node randomly among  the 5 best neighbors
+# (again, even if  it degrades the current solution).
+# If callback is not None, it must be a one-argument function that will be
+# called at each step with the current node
 def randomized_maxvalue(problem, limit=100, callback=None):
+
 	current = LSNode(problem, problem.initial, 0)
         best = current
+        random.seed(42) # set the random "seed" to a static value
         for step in range(limit):
+            if callback is not None:
+                callback(current)
             best_list = []
 
             for i in list(current.expand()):
@@ -126,28 +132,39 @@ def randomized_maxvalue(problem, limit=100, callback=None):
             best_list = sorted(best_list, key=lambda b: b[0], reverse=True)
 
             best_list = best_list[:5]
-            tmp = random.choice(best_list)
+            tmp = random.choice(best_list) # Chooses the next node randomly among the 5 best neighbors
 
             current = tmp[1]
             if tmp[0] > best.value():
                 best = current
-            print(step, -current.value())
+            #print(step, -current.value())
 
         return best
 
-# insipiré du code de Ben.D
+# maxvalue chooses the best node (i.e., the node with maximum value) in the neighborhood,
+# even if it degrades the current  solution.
+# If callback is not None, it must be a one-argument function that will be
+# called at each step with the current node
+
 def maxvalue(problem, limit=100, callback=None):
 	current = LSNode(problem, problem.initial, 0)
         best = current
 
         for step in range(limit):
+            if callback is not None:
+                callback(current)
+
             for i in list(current.expand()):
                 if i.value() > best.value():
                     best = i
-                    best_step = step
-            current = best
-            print(step, -current.value())
+                    #best_step = step
+            #current = best
+            #print(step, -current.value())
         return best
+
+####################
+# Launch the search#
+###################
 
 if __name__ == '__main__':
 	wedding = Wedding(sys.argv[1])
