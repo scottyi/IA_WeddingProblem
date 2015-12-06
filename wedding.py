@@ -47,23 +47,26 @@ class Wedding(Problem):
 
 
 
-    #Returns all differents states obtained by swapping 2 tables
+    # Returns all differents states obtained by swapping 2 tables
 	def successor(self, state):
          list_size = len(state.list)
          for i in range(list_size):
              for j in range(list_size):
                  if i<j: #avoid identical swaps
-                     yield ((i,j),state.swap_city(i,j))
+                     yield ((i,j),state.swap_tables(i,j))
 
 
 
 	def value(self, state):
         #TODO
 		pass
+
 ###############
 # State class #
 ###############
-
+# This class represents a state. A state is represented by a matrix.
+# At each different state, the matrix  is different too.
+# A matrix is an attribute of the class State.
 class State:
 
     def __init__(self, n, t, m, tables, value):
@@ -75,7 +78,7 @@ class State:
 
 
 
-    # Swap deux tables
+    # Swap two tables
     def swap_tables(self, table1, table2):
         new_state = deepcopy(self)
         tmp = new_state.list[table1]
@@ -90,7 +93,6 @@ class State:
             s+=self.list[x]
         return hash(s)
 
-
 ###########################################
     def __eq__(self, state):
         return hash(self) == hash(state)
@@ -103,10 +105,7 @@ class State:
         s += str(self.list[len(self.list)-1])
         return s
 
-
 ###########################################
-
-
 
 ################
 # Local Search #
