@@ -56,11 +56,6 @@ class Wedding(Problem):
                      yield ((i,j),state.swap_tables(i,j))
 
 
-
-	def value(self, state):
-        #TODO
-		pass
-
 ###############
 # State class #
 ###############
@@ -69,14 +64,14 @@ class Wedding(Problem):
 # A matrix is an attribute of the class State.
 class State:
 
-    def __init__(self, n, t, m, tables, value):
-		#TODO
-		self.list=[]
+    def __init__(self, n, t, matrix ):
 
-
-
-
-
+        self.guests = n # n guests
+        self.tables = t # t tables
+        self.affinities_matrix = matrix # affinities matrix
+        self.height = len(self.affinities_matrix) # height is the number of lines of the affinities matrix
+        self.width = len(self.affinities_matrix[0]) # width is  the number of column of the affinities matrix
+        self.list = []
 
     # Swap two tables
     def swap_tables(self, table1, table2):
@@ -86,18 +81,17 @@ class State:
         new_state.list[table2] = tmp
         return new_state
 
-###########################################
     def __hash__(self):
         s = ""
         for x in range(0, len(self.list)):
             s+=self.list[x]
         return hash(s)
 
-###########################################
+
     def __eq__(self, state):
         return hash(self) == hash(state)
 
-###########################################
+
     def __str__(self):
         s = ""
         for x in range(0, len(self.list)-1):
