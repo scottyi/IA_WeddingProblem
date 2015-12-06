@@ -111,8 +111,7 @@ class State:
 # If callback is not None, it must be a one-argument function that will be
 # called at each step with the current node
 def randomized_maxvalue(problem, limit=100, callback=None):
-
-	current = LSNode(problem, problem.initial, 0)
+        current = LSNode(problem, problem.initial, 0)
         best = current
         random.seed(42) # set the random "seed" to a static value
         for step in range(limit):
@@ -141,9 +140,8 @@ def randomized_maxvalue(problem, limit=100, callback=None):
 # called at each step with the current node
 
 def maxvalue(problem, limit=100, callback=None):
-	current = LSNode(problem, problem.initial, 0)
+        current = LSNode(problem, problem.initial, 0)
         best = current
-
         for step in range(limit):
             if callback is not None:
                 callback(current)
