@@ -26,26 +26,29 @@ import sys
 # Problem class #
 #################
 class Wedding(Problem):
-    # Contains the initial State
+
+    # Defines the initial State
 	def __init__(self, init_state):
-    # Read init matrix and and put it as initial State
+    # Parse the file and put it in a matrix
            file_init  = open(init_state, 'r')
-           i = 0
-           j = 0
-           matrix = []
-           for line in file_init:
-                matrix.append([])
-                for string in line:
-                    for char in string:
-                        if char != '\n' and char !='\r':
-                            matrix.append(char)
-                i+=1
-           #self.initial = State(matrix,)
+           affinities_matrix = []
+           i = -2
+           for line  in file_init:
+               if i == -2:
+                   nbr_guests = line
+                   i = i + 1
+               elif i == -1:
+                   nbr_tables = line
+                   i = i + 1
+               else :
+                     cols = line.split(" ")
+                     affinities_matrix.append([])
+                     for col in cols:
+                         affinities_matrix[i].append(int(col))
+               i+=1
+
+           self.initial = State(nbr_guests,nbr_tables,affinities_matrix)
            file_init.close()
-
-
-
-
 
     # Returns all differents states obtained by swapping 2 tables
 	def successor(self, state):
@@ -69,8 +72,6 @@ class State:
         self.guests = n # n guests
         self.tables = t # t tables
         self.affinities_matrix = matrix # affinities matrix
-        self.height = len(self.affinities_matrix) # height is the number of lines of the affinities matrix
-        self.width = len(self.affinities_matrix[0]) # width is  the number of column of the affinities matrix
         self.list = []
 
     # Swap two tables
