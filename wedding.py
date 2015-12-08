@@ -14,6 +14,7 @@ GROUPE 29
 #		Implementation of the wedding problem class
 #
 ################################################################################
+from mimetypes import guess_all_extensions
 
 from search import *
 from copy import deepcopy
@@ -21,6 +22,7 @@ from utils import *
 import random
 import sys
 
+matrix = []
 
 #################
 # Problem class #
@@ -30,15 +32,93 @@ class Wedding(Problem):
     def __init__(self, init):
 
         # Parse the input file
-        self.object = self.parse_file(init)
-        self.initial = self.initSolution(self.object)
+        guest, tables, grid = self.parse_file(init)
+        value, solution = self.initSolution(guest, tables, grid)
 
-    # Returns all differents states obtained by swapping 2 tables
+        #init the initial state
+        self.initial = State(guest, tables, grid, solution, value)
+
+    #Returns all differents states obtained by swapping 2 points in the path."""
     def successor(self, state):
-        pass
+
+        value, solution = state.getSolution()
+        nbr_guests = state.getGuests()
+        nbr_tables = state.getTables()
+        affinities = state.getAffinities()
+
+        s = nbr_guests / nbr_tables
+
+        for table in solution:
+            if (self.getValue(table, affinities,s) < 0) :
+                #get the unhappy one
+                unhappy = self.getUnhappy(table,affinities,s)
+                new_solution = self.newSolution(unhappy, table, solution, affinities, s)
+                new_value = self.getTotalValue(new_solution, affinities, s)
+                new_state = state.build_state(new_solution, new_value)
+                yield ("swap", new_state)
 
     def value(self, state):
-        pass
+        value, solution = state.getSolution()
+        return value
+
+    def getUnhappy(self, table, affinities, s):
+        i = 0
+
+        while(i < s):
+            p1 = table[i]
+            for p2 in table :
+                #if p1 dislike p2, he has to mouve
+                if affinities[p1][p2] < 0:
+                    return p1
+            i += 1
+        return None
+
+    def newTable(self, p1, p2, table, s):
+        new_table = []
+        i = 0
+        for p in table :
+            new_table.append(p)
+            if p == p2 :
+                new_table[i] = p1
+            i += 1
+
+        return new_table
+
+
+    def swap(self, p1, p2, t1, t2, cur_solution, s, affinities):
+
+        new_table1 = self.newTable(p2, p1, t1, s)
+        new_table2 = self.newTable(p1, p2, t2, s)
+        new_solution = []
+        i = 0
+
+        for table in cur_solution :
+
+            if table == t2 :
+                if self.getValue(t2,affinities,s) < self.getValue(new_table2, affinities,s) :
+                    new_solution.append(new_table2)
+                else :
+                    new_solution.append(table)
+            elif table == t1 :
+                if self.getValue(t1,affinities,s) < self.getValue(new_table1, affinities,s) :
+                    new_solution.append(new_table1)
+                else :
+                    new_solution.append(table)
+            else :
+                new_solution.append(table)
+
+        return new_solution
+
+
+    def newSolution(self, unhappy, unhappyTable, cur_solution, affinities, s):
+
+        new_solution = []
+        for table in cur_solution :
+            if self.getValue(table, affinities,s) < 0 and table != unhappyTable :
+                unhappy2 = self.getUnhappy(table,affinities,s)
+                new_solution = self.swap(unhappy, unhappy2, unhappyTable, table, cur_solution, s, affinities)
+        return new_solution
+
 
     #read the file, create the list and code it for the state schema
     def parse_file(self,path):
@@ -65,9 +145,12 @@ class Wedding(Problem):
 
         return int(nbr_guests), int(nbr_tables), grid
 
-    def initSolution(self, object):
+    def initSolution(self, n, t, m):
 
-        nbr_guests, nbr_tables, grid = object
+        nbr_guests = n
+        nbr_tables = t
+        grid = m
+
         #value of the initial solution
         value = 0
         #number of guests in each table
@@ -86,7 +169,10 @@ class Wedding(Problem):
                 tables[t].append(int(i))
 
                 #fill tables[t]
-                value = self.fillTable(i, nbr_guests, s, tables[t], tables, grid, value)
+                self.fillTable(i, nbr_guests, s, tables[t], tables, grid)
+
+                #sum value of the tables
+                value += self.getValue(tables[t], grid, s)
                 #Go to the next table
                 t += 1
         return value, tables
@@ -101,7 +187,7 @@ class Wedding(Problem):
         return True
 
     #Fill the table t
-    def fillTable(self, p, n, s, table, tables, grid, value):
+    def fillTable(self, p, n, s, table, tables, grid):
 
         #level of affinity [-5;+5]
         aff_level = 5
@@ -114,23 +200,34 @@ class Wedding(Problem):
                     if grid[p][j] == aff_level:
                         if len(table) < s :
                             table.append(int(j))
-                            value += grid[p][j]
             if aff_level == -5 :
                 aff_level = 5
             else :
                 aff_level -= 1
         #sort the table when is full
         table.sort()
+
+    #Get value of the table
+    def getValue(self, table, grid, s):
+        value = 0
+        i = 0
+
+        while (i < s) :
+            p1 = table[i]
+            for p2 in table :
+                value += grid[p1][p2]
+            i += 1
+
         return value
 
-    #Get value of the solution
-    def getValue(self, tables):
-        value = 0
-        for table in tables :
-            value += sum(table)
-            print("Value")
-            print(value)
-        return value
+    #Get total value of the solution
+    def getTotalValue(self, sol, grid, s):
+        total_value = 0
+
+        for table in sol :
+            total_value += self.getValue(table,grid,s)
+
+        return total_value
 
 
 
@@ -143,11 +240,38 @@ class Wedding(Problem):
 class State:
 
     def __init__(self, n, t, m, tables, value):
-        self.guests = n
-        self.tables = t
+        self.nbr_guests = n
+        self.nbr_tables = t
         self.affinities_matrix = m
-        self.tables = tables
+        self.solution = tables
         self.value = value
+
+    def __str__(self):
+        s = ""
+        s += str(self.value) + '\n'
+        for table in self.solution :
+            for p in table :
+                s += str(p) + ' '
+            s += '\n'
+        return s
+
+    def getGuests(self):
+        return self.nbr_guests
+
+    def getTables(self):
+        return self.nbr_tables
+
+    def getSolution(self):
+        return self.value, self.solution
+
+    def getAffinities(self):
+        return self.affinities_matrix
+
+    def build_state(self, new_sol, new_val):
+
+        new_state = State(self.nbr_guests, self.nbr_tables, self.affinities_matrix, new_sol, new_val)
+
+        return new_state
 
 
 ################
@@ -239,11 +363,13 @@ def maxvalue(problem, limit=100, callback=None):
 ###################
 
 if __name__ == '__main__':
-	wedding = Wedding(sys.argv[1])
-	print(wedding.initial)
+    wedding = Wedding(sys.argv[1])
+    print("---- Initial ----")
+    print(wedding.initial)
 
-	#node = randomized_maxvalue(wedding, 100)
-	# node = maxvalue(wedding, 100)
+    #node = randomized_maxvalue(wedding, 100)
+    node = maxvalue(wedding, 100)
 
-	#state = node.state
-	#print(state)
+    print("---- Final state ----")
+    state = node.state
+    print(state)
