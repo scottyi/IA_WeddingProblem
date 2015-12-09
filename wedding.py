@@ -81,7 +81,7 @@ class Wedding(Problem):
             if p == p2 :
                 new_table[i] = p1
             i += 1
-
+        new_table.sort()
         return new_table
 
 
