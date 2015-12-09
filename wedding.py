@@ -283,6 +283,7 @@ class State:
 # If callback is not None, it must be a one-argument function that will be
 # called at each step with the current node
 def randomized_maxvalue(problem, limit=100, callback=None):
+    random.seed(42)
     current = LSNode(problem, problem.initial, 0)
     best = current
 
@@ -364,9 +365,10 @@ def maxvalue(problem, limit=100, callback=None):
 
 if __name__ == '__main__':
     wedding = Wedding(sys.argv[1])
-    print("---- Initial ----")
+    print("---- Initial state ----")
     print(wedding.initial)
 
+    #node = random_walk(wedding, 100)
     #node = randomized_maxvalue(wedding, 100)
     node = maxvalue(wedding, 100)
 
