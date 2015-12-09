@@ -47,97 +47,90 @@ class Wedding(Problem):
         affinities = state.getAffinities()
 
         s = nbr_guests / nbr_tables
+        i = 0
 
-        for table in solution:
-            if (self.getValue(table, affinities,s) < 0) :
-                #get the unhappy person
-                unhappy = self.getUnhappy(table,affinities,s)
-                #get new solution for the unhappy person
-                new_solution = self.newSolution(unhappy, table, solution, affinities, s)
-                new_value = self.getTotalValue(new_solution, affinities, s)
-                new_state = state.build_state(new_solution, new_value)
-                yield ("swap", new_state)
+        for table in solution :
+            for p in table :
+                #get happiness of p
+                happy = self.getHappiness(p, table, affinities)
+                if happy != (s-1)*5:
+                    new_solution = self.newSolution(p, happy, table, solution, affinities, s)
+                    new_value = self.getTotalValue(new_solution, affinities, s)
+                    new_state = state.build_state(new_solution, new_value)
+                    yield ("swap", new_state)
+
+                i += 1
 
     def value(self, state):
         value, solution = state.getSolution()
         return value
 
-    def getUnhappy(self, table, affinities, s):
-        i = 0
-        unhappy = []
+    #get the level of happiness of p1 in this table
+    def getHappiness(self, p1, table, affinities):
+        happy = 0
+        for p2 in table :
+            happy += affinities[p1][p2]
 
-        while(i < s):
-            p1 = table[i]
-            for p2 in table :
-                #if p1 dislike p2, he has to mouve
-                if affinities[p1][p2] < 0:
-                    unhappy.append(p1)
+        return  happy
 
-            i += 1
-        return unhappy
 
-    def newTable(self, unhappy1, unhappy2, table, affinities, s):
-        new_table = []
+    #swap function
+    def swap(self, unhappy1, happiness1, unhappy2, happiness2, t1, t2, cur_solution, s, affinities):
 
-        i = 0
-        j = 0
-        for p in table :
-            new_table.append(p)
-            while(i < len(unhappy2)):
-                if p == unhappy2[i] :
-                    #new_table[i] = unhappy1
-                    new_table.append(unhappy1[j])
-                    j += 1
-
-                i += 1
-
-        print("##### Before #####")
-        print(unhappy1)
-        print(table)
-        print("##### After #####")
-        print(unhappy2)
-        print(new_table)
-        
-        return new_table
-
-    def checkHappiness(self):
-        pass
-
-    def swap(self, unhappy1, unhappy2, t1, t2, cur_solution, s, affinities):
-
-        new_table1 = self.newTable(unhappy2, unhappy1, t1, affinities, s)
-        new_table2 = self.newTable(unhappy1, unhappy2, t2, affinities, s)
         new_solution = []
         i = 0
+        new_table1=[]
+        new_table2=[]
 
         for table in cur_solution :
-
-            if table == t2 :
-                if self.getValue(t2,affinities,s) < self.getValue(new_table2, affinities,s) :
-                    new_solution.append(new_table2)
-                else :
-                    new_solution.append(table)
-            elif table == t1 :
-                if self.getValue(t1,affinities,s) < self.getValue(new_table1, affinities,s) :
+            if table == t1 :
+                for p in table :
+                    if p == unhappy1 :
+                        if self.getHappiness(unhappy2, table, affinities) > happiness2 :
+                            new_table1.append(unhappy2)
+                        else :
+                            return cur_solution
+                    else :
+                        new_table1.append(p)
+                #sort before
+                new_table1.sort()
+                if self.getValue(new_table1, affinities, s) > self.getValue(t1, affinities, s) :
                     new_solution.append(new_table1)
-                else :
-                    new_solution.append(table)
+            elif table == t2:
+                if table == t2 :
+                    for p2 in table :
+                        if p2 == unhappy2 :
+                            if self.getHappiness(unhappy1, table, affinities) > happiness1:
+                                new_table2.append(unhappy1)
+                            else :
+                                return cur_solution
+                        else :
+                            new_table2.append(p2)
+                    #sort before
+                    new_table2.sort()
+                    new_solution.append(new_table2)
+
             else :
                 new_solution.append(table)
 
+
         return new_solution
 
-
-    def newSolution(self, unhappy, unhappyTable, cur_solution, affinities, s):
+    #get the new solution
+    def newSolution(self, unhappy, happiness, unhappyTable, cur_solution, affinities, s):
 
         new_solution = []
+
         for table in cur_solution :
-            if self.getValue(table, affinities,s) < 0 and table != unhappyTable :
-                #get unhappy person from a other table
-                unhappy2 = self.getUnhappy(table,affinities,s)
-                #swap unhappy person
-                new_solution = self.swap(unhappy, unhappy2, unhappyTable, table, cur_solution, s, affinities)
-        return new_solution
+            #Check if we are not in the unhappytable
+            if table != unhappyTable :
+                for p in table :
+                    #get happiness of p
+                    happiness2 = self.getHappiness(p, table, affinities)
+                    if happiness2 < 0 :
+                        #swap to improve happiness
+                        new_solution = self.swap(unhappy, happiness, p, happiness2, unhappyTable, table, cur_solution, s, affinities)
+        return  new_solution
 
 
     #read the file, create the list and code it for the state schema
