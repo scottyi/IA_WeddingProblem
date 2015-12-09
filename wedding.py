@@ -50,8 +50,9 @@ class Wedding(Problem):
 
         for table in solution:
             if (self.getValue(table, affinities,s) < 0) :
-                #get the unhappy one
+                #get the unhappy person
                 unhappy = self.getUnhappy(table,affinities,s)
+                #get new solution for the unhappy person
                 new_solution = self.newSolution(unhappy, table, solution, affinities, s)
                 new_value = self.getTotalValue(new_solution, affinities, s)
                 new_state = state.build_state(new_solution, new_value)
@@ -63,32 +64,49 @@ class Wedding(Problem):
 
     def getUnhappy(self, table, affinities, s):
         i = 0
+        unhappy = []
 
         while(i < s):
             p1 = table[i]
             for p2 in table :
                 #if p1 dislike p2, he has to mouve
                 if affinities[p1][p2] < 0:
-                    return p1
-            i += 1
-        return None
+                    unhappy.append(p1)
 
-    def newTable(self, p1, p2, table, s):
+            i += 1
+        return unhappy
+
+    def newTable(self, unhappy1, unhappy2, table, affinities, s):
         new_table = []
+
         i = 0
+        j = 0
         for p in table :
             new_table.append(p)
-            if p == p2 :
-                new_table[i] = p1
-            i += 1
+            while(i < len(unhappy2)):
+                if p == unhappy2[i] :
+                    #new_table[i] = unhappy1
+                    new_table.append(unhappy1[j])
+                    j += 1
 
+                i += 1
+
+        print("##### Before #####")
+        print(unhappy1)
+        print(table)
+        print("##### After #####")
+        print(unhappy2)
+        print(new_table)
+        
         return new_table
 
+    def checkHappiness(self):
+        pass
 
-    def swap(self, p1, p2, t1, t2, cur_solution, s, affinities):
+    def swap(self, unhappy1, unhappy2, t1, t2, cur_solution, s, affinities):
 
-        new_table1 = self.newTable(p2, p1, t1, s)
-        new_table2 = self.newTable(p1, p2, t2, s)
+        new_table1 = self.newTable(unhappy2, unhappy1, t1, affinities, s)
+        new_table2 = self.newTable(unhappy1, unhappy2, t2, affinities, s)
         new_solution = []
         i = 0
 
@@ -115,7 +133,9 @@ class Wedding(Problem):
         new_solution = []
         for table in cur_solution :
             if self.getValue(table, affinities,s) < 0 and table != unhappyTable :
+                #get unhappy person from a other table
                 unhappy2 = self.getUnhappy(table,affinities,s)
+                #swap unhappy person
                 new_solution = self.swap(unhappy, unhappy2, unhappyTable, table, cur_solution, s, affinities)
         return new_solution
 
@@ -217,7 +237,6 @@ class Wedding(Problem):
             for p2 in table :
                 value += grid[p1][p2]
             i += 1
-
         return value
 
     #Get total value of the solution
